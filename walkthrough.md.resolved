@@ -1,0 +1,120 @@
+# SHL Assessment Recommendation System — Walkthrough
+
+## What Was Built
+
+A production-grade, end-to-end **AI-powered SHL Assessment Recommender** with:
+- **Playwright web scraper** → 389 assessments from SHL catalog
+- **ChromaDB + sentence-transformers** vector index
+- **FastAPI** REST API (`/health` + `/recommend`)
+- **Gemini 1.5 Flash** re-ranking (when API key is set)
+- **Premium dark frontend** (zero frameworks, zero watermarks)
+- **predictions.csv** with 90 rows (9 queries × 10 recommendations)
+
+---
+
+## Project Layout
+
+```
+SHL_Assessment_Recommender_System/
+├── backend/
+│   ├── main.py                 ← FastAPI app
+│   ├── scraper.py              ← Playwright scraper
+│   ├── embedder.py             ← ChromaDB + sentence-transformers
+│   ├── recommender.py          ← Hybrid search + Gemini re-ranking
+│   ├── evaluate.py             ← Recall@10 evaluation
+│   ├── generate_predictions.py ← Generate predictions.csv
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── chroma_db/              ← Local vector store (auto-created)
+├── frontend/
+│   └── index.html              ← Full UI (single file)
+└── data/
+    ├── shl_catalog.json        ← 389 assessments
+    └── predictions.csv         ← 91 rows (header + 90 predictions)
+```
+
+---
+
+## Screenshots
+
+![Frontend Loaded](/C:/Users/Maheshchandramouli/.gemini/antigravity/brain/f87b53e0-9a10-4fc7-9a8e-0193043d7cf0/frontend_loaded.png)
+
+![Chip Filled](/C:/Users/Maheshchandramouli/.gemini/antigravity/brain/f87b53e0-9a10-4fc7-9a8e-0193043d7cf0/frontend_chip_filled.png)
+
+---
+
+## Verified Steps
+
+| Step | Result |
+|---|---|
+| [scraper.py](file:///C:/Users/Maheshchandramouli/Downloads/SHL_Assessment_Recommender_System/backend/scraper.py) | ✅ 389 assessments scraped and saved to `shl_catalog.json` |
+| [embedder.py](file:///C:/Users/Maheshchandramouli/Downloads/SHL_Assessment_Recommender_System/backend/embedder.py) | ✅ 389 embeddings in ChromaDB (exit 0) |
+| `GET /health` | ✅ `{"status":"healthy"}` |
+| `POST /recommend` | ✅ Returns 10 assessments with full metadata |
+| [generate_predictions.py](file:///C:/Users/Maheshchandramouli/Downloads/SHL_Assessment_Recommender_System/backend/generate_predictions.py) | ✅ `predictions.csv` — 91 rows (header + 90) |
+| Frontend UI | ✅ Dark design, gradient title, chips, char counter |
+
+---
+
+## How to Run Locally
+
+```bash
+cd backend
+
+# 1. Install deps
+pip install -r requirements.txt
+python -m playwright install chromium
+
+# 2. Scrape (skip if shl_catalog.json exists)
+python scraper.py
+
+# 3. Build vector index
+python embedder.py
+
+# 4. Start API
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
+# 5. Open frontend/index.html in browser — set endpoint to http://localhost:8000
+
+# 6. Generate predictions
+python generate_predictions.py
+
+# 7. Evaluate
+python evaluate.py
+```
+
+---
+
+## Add Gemini API Key (for AI re-ranking)
+
+```
+# backend/.env
+GOOGLE_API_KEY=your_key_here
+```
+Get a free key at: https://aistudio.google.com/app/apikey
+
+---
+
+## Deploy to Render + Vercel
+
+### Backend (Render.com)
+1. Push repo to GitHub
+2. New Web Service → connect repo
+3. **Root Directory**: `backend`
+4. **Build Command**: `pip install -r requirements.txt && python -m playwright install chromium && python scraper.py && python embedder.py`
+5. **Start Command**: `python -m uvicorn main:app --host 0.0.0.0 --port $PORT`
+6. **Env var**: `GOOGLE_API_KEY=your_key`
+7. Copy the URL (e.g. `https://shl-recommender.onrender.com`)
+
+### Frontend (Vercel)
+1. Edit [frontend/index.html](file:///C:/Users/Maheshchandramouli/Downloads/SHL_Assessment_Recommender_System/frontend/index.html) → set `API_URL` const to your Render URL
+2. Import `frontend/` folder to Vercel
+3. Deploy → done
+
+---
+
+## Notes
+
+- `entry-level-sales-7-1` was not found in the current SHL catalog — the product may have been retired or the URL changed. The vector search will still return the closest sales assessments.
+- Recall@10 via slug-matching is in [evaluate.py](file:///C:/Users/Maheshchandramouli/Downloads/SHL_Assessment_Recommender_System/backend/evaluate.py). Add a valid `GOOGLE_API_KEY` for Gemini re-ranking to improve relevance scores.
+- The API works without a Gemini key — falls back to pure vector search.

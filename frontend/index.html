@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHL Assessment Intelligence — Find the Right Assessment</title>
+  <meta name="description" content="AI-powered SHL assessment recommendation engine. Paste a job description or query to get matched assessments instantly." />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #07070f;
+      --surface: rgba(255,255,255,0.038);
+      --surface-hover: rgba(255,255,255,0.065);
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(99,102,241,0.35);
+      --indigo: #6366f1;
+      --indigo-light: #818cf8;
+      --indigo-glow: rgba(99,102,241,0.14);
+      --text: #eef0ff;
+      --muted: #7b7f9e;
+      --faint: rgba(255,255,255,0.3);
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --violet: #8b5cf6;
+      --cyan: #06b6d4;
+      --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Instrument Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* ── Grid overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(99,102,241,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,0.025) 1px, transparent 1px);
+      background-size: 52px 52px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Ambient glow orbs ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    .orb-1 { width: 500px; height: 500px; background: rgba(99,102,241,0.09); top: -120px; right: -80px; animation-delay: 0s; }
+    .orb-2 { width: 380px; height: 380px; background: rgba(139,92,246,0.07); bottom: -100px; left: -60px; animation-delay: -6s; }
+    .orb-3 { width: 260px; height: 260px; background: rgba(6,182,212,0.06); top: 40%; left: 30%; animation-delay: -12s; }
+
+    @keyframes drift {
+      0%   { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(30px, 20px) scale(1.08); }
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 72px 0 52px;
+      animation: fadeUp 0.55s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--indigo-light);
+      margin-bottom: 24px;
+      padding: 6px 14px;
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 999px;
+    }
+
+    .eyebrow-dot {
+      width: 6px; height: 6px;
+      background: var(--indigo);
+      border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.06;
+      color: var(--text);
+    }
+
+    h1 .accent {
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tagline {
+      margin-top: 18px;
+      font-size: 15px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 2px solid var(--indigo);
+      width: 0;
+      animation: typewriter 2.2s steps(55) 0.9s forwards, blink 0.8s step-end 3.1s;
+    }
+
+    @keyframes typewriter { to { width: 100%; } }
+    @keyframes blink { 50% { border-color: transparent; } }
+
+    /* ── Stats strip ── */
+    .stats-strip {
+      display: flex;
+      gap: 32px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+      animation: fadeUp 0.55s ease 0.2s both;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 2px;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+      margin: 36px 0;
+    }
+
+    /* ── Input section ── */
+    .input-section {
+      animation: fadeUp 0.55s ease 0.1s both;
+    }
+
+    .input-label {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+    }
+
+    .textarea-wrapper {
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 20px 48px;
+      color: var(--text);
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 15px;
+      resize: vertical;
+      min-height: 155px;
+      transition: border-color 0.22s, box-shadow 0.22s, background 0.22s;
+      outline: none;
+      line-height: 1.65;
+    }
+
+    textarea::placeholder { color: var(--muted); font-style: italic; }
+
+    textarea:focus {
+      border-color: var(--indigo);
+      box-shadow: 0 0 0 3px var(--indigo-glow), 0 4px 32px rgba(0,0,0,0.35);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .textarea-footer {
+      position: absolute;
+      bottom: 14px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .textarea-hint {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .char-count {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Quick fill chips ── */
+    .chips-label {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 8px;
+      margin-top: 18px;
+    }
+
+    .chips {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'JetBrains Mono', monospace;
+      user-select: none;
+    }
+
+    .chip:hover {
+      border-color: var(--indigo);
+      color: var(--indigo-light);
+      background: var(--indigo-glow);
+      transform: translateY(-1px);
+    }
+
+    /* ── Submit button ── */
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn {
+      background: var(--indigo);
+      color: white;
+      border: none;
+      border-radius: 11px;
+      padding: 14px 30px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover::before { opacity: 1; }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(99,102,241,0.4);
+      background: #7577f5;
+    }
+
+    .btn:active { transform: translateY(0); box-shadow: none; }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .btn.loading .btn-spinner { display: block; }
+    .btn.loading .btn-arrow { display: none; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .shortcut-hint {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .shortcut-hint kbd {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+    }
+
+    /* ── Loading bar ── */
+    .loading-bar {
+      height: 2px;
+      background: var(--gradient);
+      background-size: 200% 100%;
+      border-radius: 2px;
+      margin: 28px 0 20px;
+      display: none;
+      animation: shimmer 1.8s ease infinite;
+    }
+
+    .loading-bar.active { display: block; }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Loading state ── */
+    .loading-state {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .loading-state.active { display: flex; }
+
+    .skeleton {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .skeleton::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.5s ease infinite;
+    }
+
+    @keyframes skeletonShimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .skeleton-inner { padding: 24px; opacity: 0.4; }
+    .skeleton-title { height: 18px; background: var(--muted); border-radius: 6px; width: 60%; margin-bottom: 14px; }
+    .skeleton-line { height: 12px; background: var(--muted); border-radius: 4px; margin-bottom: 9px; }
+    .skeleton-line:last-child { width: 70%; }
+
+    /* ── Results ── */
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .results-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .count-badge {
+      background: var(--indigo-glow);
+      border: 1px solid rgba(99,102,241,0.3);
+      color: var(--indigo-light);
+      border-radius: 999px;
+      padding: 4px 13px;
+      font-size: 11.5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+    }
+
+    /* ── Assessment Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 10px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: border-color 0.2s, box-shadow 0.25s, background 0.2s;
+      cursor: default;
+    }
+
+    .card.visible {
+      animation: slideUp 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+
+    .card:hover {
+      border-color: var(--border-hover);
+      background: var(--surface-hover);
+      box-shadow: 0 6px 32px rgba(0,0,0,0.4);
+    }
+
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-index {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+
+    .card-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .card-link {
+      flex-shrink: 0;
+      color: var(--indigo-light);
+      text-decoration: none;
+      font-size: 11.5px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 7px 13px;
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 8px;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .card-link:hover {
+      background: var(--indigo-glow);
+      border-color: var(--indigo);
+      transform: translateY(-1px);
+    }
+
+    .card-desc {
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.65;
+      margin-bottom: 16px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* ── Badges ── */
+    .badge {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-K { background: rgba(99,102,241,0.12); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.22); }
+    .badge-P { background: rgba(16,185,129,0.1); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.22); }
+    .badge-A { background: rgba(245,158,11,0.1); color: #fcd34d; border: 1px solid rgba(245,158,11,0.22); }
+    .badge-C { background: rgba(244,63,94,0.1); color: #fda4af; border: 1px solid rgba(244,63,94,0.22); }
+    .badge-B { background: rgba(139,92,246,0.1); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.22); }
+    .badge-S { background: rgba(6,182,212,0.1); color: #67e8f9; border: 1px solid rgba(6,182,212,0.22); }
+    .badge-D { background: rgba(251,146,60,0.1); color: #fdba74; border: 1px solid rgba(251,146,60,0.22); }
+    .badge-E { background: rgba(236,72,153,0.1); color: #f9a8d4; border: 1px solid rgba(236,72,153,0.22); }
+    .badge-default { background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid var(--border); }
+
+    .meta-chip {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Error ── */
+    .error-box {
+      background: rgba(244,63,94,0.08);
+      border: 1px solid rgba(244,63,94,0.25);
+      border-radius: 12px;
+      padding: 18px 22px;
+      color: #fda4af;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .error-box strong { display: block; margin-bottom: 5px; color: #f43f5e; font-size: 15px; }
+
+    /* ── API config strip ── */
+    .config-strip {
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #fcd34d;
+      font-family: 'JetBrains Mono', monospace;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .config-icon { font-size: 16px; }
+
+    .config-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      padding-bottom: 2px;
+    }
+
+    .config-input::placeholder { color: var(--muted); }
+
+    .config-save-btn {
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.3);
+      color: #fcd34d;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .config-save-btn:hover { background: rgba(245,158,11,0.25); }
+
+    /* ── Footer ── */
+    footer {
+      padding: 52px 0 44px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+      animation: fadeUp 0.5s ease 0.3s both;
+    }
+
+    .footer-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .footer-sub {
+      color: var(--muted);
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.7;
+    }
+
+    .footer-pills {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .footer-pill {
+      font-size: 10.5px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      padding: 3px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      header { padding: 48px 0 36px; }
+      .stats-strip { gap: 20px; }
+      .btn-row { flex-direction: column; align-items: flex-start; }
+      .card-header { flex-direction: column; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="container">
+    <!-- ── Header ── -->
+    <header>
+      <p class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        SHL · Assessment Intelligence
+      </p>
+      <h1>Find the right<br/><span class="accent">assessment</span>.</h1>
+      <p class="tagline">AI-powered matching for every role, every team, every goal.</p>
+
+      <div class="stats-strip">
+        <div class="stat">
+          <span class="stat-value">377+</span>
+          <span class="stat-label">Assessments indexed</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">5–10</span>
+          <span class="stat-label">Recommendations per query</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">AI</span>
+          <span class="stat-label">Gemini-powered re-ranking</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">9</span>
+          <span class="stat-label">Test type categories</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="divider"></div>
+
+    <!-- ── API Config ── -->
+    <div class="config-strip" id="configStrip">
+      <span class="config-icon">⚙</span>
+      <span>API endpoint:</span>
+      <input
+        type="text"
+        class="config-input"
+        id="apiEndpoint"
+        placeholder="https://your-app.onrender.com"
+        value="http://localhost:8000"
+      />
+      <button class="config-save-btn" onclick="saveEndpoint()">Save</button>
+    </div>
+
+    <!-- ── Input Section ── -->
+    <div class="input-section">
+      <p class="input-label">// Job Description or Query</p>
+
+      <div class="textarea-wrapper">
+        <textarea
+          id="query"
+          placeholder="Paste a job description, natural language query, or a URL to a job posting…&#10;&#10;Example: 'Hiring Java developers who collaborate with business teams, 40-minute assessment'"
+          oninput="updateCharCount()"
+          rows="6"
+        ></textarea>
+        <div class="textarea-footer">
+          <span class="textarea-hint">Ctrl+Enter to submit</span>
+          <span class="char-count"><span id="charCount">0</span> chars</span>
+        </div>
+      </div>
+
+      <p class="chips-label">// Quick Examples</p>
+      <div class="chips">
+        <span class="chip" onclick="fillChip('I am hiring for Java developers who can also collaborate effectively with my business teams. Looking for an assessment that can be completed in 40 minutes.')">☕ Java Dev · 40 min</span>
+        <span class="chip" onclick="fillChip('I want to hire new graduates for a sales role in my company, the budget is for about an hour for each test. Give me some options.')">📈 Sales Graduate · 60 min</span>
+        <span class="chip" onclick="fillChip('Looking to hire mid-level professionals who are proficient in Python, SQL and JavaScript. Need an assessment package that can test all skills with max duration of 60 minutes.')">🐍 Python + SQL · 60 min</span>
+        <span class="chip" onclick="fillChip('I am hiring for an analyst and wants applications to screen using Cognitive and personality tests, what options are available within 45 mins.')">📊 Analyst · Cognitive · 45 min</span>
+        <span class="chip" onclick="fillChip('For Marketing - Content Writer Position. The role involves campaign messaging, copywriting, social media, and content generation for an e-commerce brand.')">✍️ Content Writer</span>
+        <span class="chip" onclick="fillChip('We are seeking a Research Engineer for AI/ML roles. Requires expertise in NLP, Python, TensorFlow, PyTorch. Time limit is less than 30 minutes.')">🤖 AI / ML Engineer · 30 min</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" id="submitBtn" onclick="getRecommendations()">
+          <div class="btn-spinner"></div>
+          <span class="btn-arrow">→</span>
+          <span id="btnText">Recommend Assessments</span>
+        </button>
+        <span class="shortcut-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd></span>
+      </div>
+    </div>
+
+    <!-- ── Loading bar ── -->
+    <div class="loading-bar" id="loadingBar"></div>
+
+    <!-- ── Skeleton loading ── -->
+    <div class="loading-state" id="loadingState">
+      <div class="skeleton"><div class="skeleton-inner"><div class="skeleton-title"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+      <div class="skeleton"><div class="skeleton-inner"><div class="skeleton-title"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+      <div class="skeleton"><div class="skeleton-inner"><div class="skeleton-title"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+    </div>
+
+    <!-- ── Results ── -->
+    <div id="results"></div>
+
+    <!-- ── Footer ── -->
+    <footer>
+      <div class="footer-logo">SHL Assessment Intelligence</div>
+      <div class="footer-sub">
+        Semantic vector search · Gemini AI re-ranking · SHL Product Catalog
+      </div>
+      <div class="footer-pills">
+        <span class="footer-pill">FastAPI</span>
+        <span class="footer-pill">ChromaDB</span>
+        <span class="footer-pill">sentence-transformers</span>
+        <span class="footer-pill">Gemini 1.5 Flash</span>
+        <span class="footer-pill">Playwright</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ── API Endpoint (saved to localStorage) ──────────────────────────────────
+    let API_URL = localStorage.getItem("shl_api_url") || "http://localhost:8000";
+    document.getElementById("apiEndpoint").value = API_URL;
+
+    function saveEndpoint() {
+      API_URL = document.getElementById("apiEndpoint").value.trim().replace(/\/$/, "");
+      localStorage.setItem("shl_api_url", API_URL);
+      const btn = document.querySelector(".config-save-btn");
+      btn.textContent = "✓ Saved";
+      setTimeout(() => { btn.textContent = "Save"; }, 1500);
+    }
+
+    // ── Char count ────────────────────────────────────────────────────────────
+    function updateCharCount() {
+      const len = document.getElementById("query").value.length;
+      document.getElementById("charCount").textContent = len;
+    }
+
+    // ── Quick fill ────────────────────────────────────────────────────────────
+    function fillChip(text) {
+      const ta = document.getElementById("query");
+      ta.value = text;
+      updateCharCount();
+      ta.focus();
+    }
+
+    // ── Badge rendering ───────────────────────────────────────────────────────
+    const TYPE_MAP = {
+      "Knowledge & Skills":            { key: "K", label: "K&S" },
+      "Personality & Behavior":        { key: "P", label: "P&B" },
+      "Personality & Behaviour":       { key: "P", label: "P&B" },
+      "Ability & Aptitude":            { key: "A", label: "A&A" },
+      "Competencies":                  { key: "C", label: "Comp" },
+      "Biodata & Situational Judgement":{ key: "B", label: "BSJ" },
+      "Simulations":                   { key: "S", label: "Sim" },
+      "Development & 360":             { key: "D", label: "D360" },
+      "Assessment Exercises":          { key: "E", label: "AEx" },
+    };
+
+    function getTestTypeBadge(type) {
+      const entry = Object.entries(TYPE_MAP).find(([k]) => type.includes(k));
+      if (entry) {
+        const [fullName, { key, label }] = entry;
+        return `<span class="badge badge-${key}" title="${fullName}">${label}</span>`;
+      }
+      return `<span class="badge badge-default">${type}</span>`;
+    }
+
+    // ── Main recommendation handler ───────────────────────────────────────────
+    async function getRecommendations() {
+      const query = document.getElementById("query").value.trim();
+      if (!query) {
+        document.getElementById("query").focus();
+        return;
+      }
+
+      const btn = document.getElementById("submitBtn");
+      const btnText = document.getElementById("btnText");
+      const loadingBar = document.getElementById("loadingBar");
+      const loadingState = document.getElementById("loadingState");
+      const resultsDiv = document.getElementById("results");
+
+      // UI: loading
+      btn.disabled = true;
+      btn.classList.add("loading");
+      btnText.textContent = "Analyzing...";
+      loadingBar.classList.add("active");
+      loadingState.classList.add("active");
+      resultsDiv.innerHTML = "";
+
+      try {
+        const endpoint = document.getElementById("apiEndpoint").value.trim().replace(/\/$/, "");
+
+        const res = await fetch(`${endpoint}/recommend`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const assessments = data.recommended_assessments || [];
+
+        if (assessments.length === 0) {
+          resultsDiv.innerHTML = `
+            <div class="error-box">
+              <strong>No results found</strong>
+              No assessments matched your query. Try a more detailed job description.
+            </div>`;
+          return;
+        }
+
+        renderResults(assessments);
+
+      } catch (err) {
+        resultsDiv.innerHTML = `
+          <div class="error-box">
+            <strong>Connection Error</strong>
+            ${escapeHtml(err.message)}<br/>
+            Make sure the API is running at the endpoint shown above, then try again.
+          </div>`;
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove("loading");
+        btnText.textContent = "Recommend Assessments";
+        loadingBar.classList.remove("active");
+        loadingState.classList.remove("active");
+      }
+    }
+
+    // ── Render result cards ───────────────────────────────────────────────────
+    function renderResults(assessments) {
+      const resultsDiv = document.getElementById("results");
+
+      let html = `
+        <div class="results-header">
+          <span class="results-title">Recommended Assessments</span>
+          <span class="count-badge">${assessments.length} matched</span>
+        </div>
+      `;
+
+      assessments.forEach((a, i) => {
+        const types = Array.isArray(a.test_type)
+          ? a.test_type
+          : (a.test_type ? [a.test_type] : []);
+        const badges = types.filter(Boolean).map(getTestTypeBadge).join("");
+        const desc = escapeHtml((a.description || "No description available.").trim());
+        const safeUrl = escapeHtml(a.url || "");
+        const safeName = escapeHtml(a.name || "Unknown Assessment");
+        const delay = i * 55;
+
+        html += `
+          <div class="card" style="animation-delay:${delay}ms">
+            <div class="card-index">Assessment ${String(i + 1).padStart(2, "0")}</div>
+            <div class="card-header">
+              <span class="card-name">${safeName}</span>
+              <a class="card-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">
+                View ↗
+              </a>
+            </div>
+            <p class="card-desc">${desc}</p>
+            <div class="card-meta">
+              ${badges}
+              ${a.duration ? `<span class="meta-chip">⏱ ${a.duration} min</span>` : ""}
+              ${a.remote_support === "Yes" ? `<span class="meta-chip">🌐 Remote</span>` : ""}
+              ${a.adaptive_support === "Yes" ? `<span class="meta-chip">⚡ Adaptive</span>` : ""}
+            </div>
+          </div>
+        `;
+      });
+
+      resultsDiv.innerHTML = html;
+
+      // Trigger entrance animations after a tick
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.querySelectorAll(".card").forEach(c => c.classList.add("visible"));
+        });
+      });
+
+      resultsDiv.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // ── Utilities ─────────────────────────────────────────────────────────────
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // ── Keyboard shortcut ─────────────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("query").addEventListener("keydown", e => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) getRecommendations();
+      });
+    });
+  </script>
+</body>
+</html>

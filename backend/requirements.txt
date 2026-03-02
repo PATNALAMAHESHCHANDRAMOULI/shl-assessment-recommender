@@ -4,7 +4,7 @@ pydantic
 playwright
 beautifulsoup4
 sentence-transformers
-chromadb
+chromadb==0.4.24
 google-generativeai
 pandas
 requests
